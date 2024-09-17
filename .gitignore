@@ -3,4 +3,3 @@
 __pycache__/
 .coverage
 mariadb_data
-Jenkinsfile
