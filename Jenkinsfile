@@ -23,8 +23,9 @@ pipeline {
                 //sh "docker rm -f ${IMAGE_NAME}-${IMAGE_TAG}"  // Remove o container
             }
         }
+    }
 
-    post{
+    post {
         success {
             echo "Pipeline executada com sucesso"
         }
@@ -34,8 +35,5 @@ pipeline {
         cleanup {
             sh "docker stop ${IMAGE_NAME}-${IMAGE_TAG}"
         }
-
-    
-         }
     }
 }
