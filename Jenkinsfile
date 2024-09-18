@@ -19,7 +19,7 @@ pipeline {
         stage("Teste") {
             steps{
                 sh "docker run -d -ti --rm --name ${IMAGE_NAME}-${IMAGE_TAG} ${IMAGE_NAME}:${IMAGE_TAG}"  // Inicia um container com a imagem que foi buildada
-                sh "docker exec ${IMAGE_NAME}-${IMAGE_TAG} nosetests --with-xunit --with-coverage --cover-package=project teste_users.py" // Executa um comando no container
+                sh "docker exec ${IMAGE_NAME}-${IMAGE_TAG} nosetests --with-xunit --with-coverage --cover-package=project test_users.py" // Executa um comando no container
                 //sh "docker rm -f ${IMAGE_NAME}-${IMAGE_TAG}"  // Remove o container
             }
         }
