@@ -1,5 +1,5 @@
 pipeline {
-    agent any  // Define o agent / nó em que a pipeline será executada
+    agent k3s  // Define o agent / nó em que a pipeline será executada
 
     // Definição das variáveis que serão utilizadas na construção da imagem
     environment {
