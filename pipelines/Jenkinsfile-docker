@@ -20,10 +20,6 @@ volumes: [
             label POD_LABEL
         }
 
-        environment {
-            IMAGE_TAG = "O.${BUILD_ID}"
-            IMAGE_NAME = "simple-python-flask"
-        }
 
         // Checkout do código
         container('docker') {
@@ -32,14 +28,14 @@ volumes: [
 
         // Build da imagem
         container('docker') {
-            sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+            sh "docker build -t simple-python-flask:${BUILD_ID} ."
         }
 
         // Execução dos testes
         container('docker') {
             sh """
-                docker run -d -ti --rm --name ${IMAGE_NAME}-${IMAGE_TAG} ${IMAGE_NAME}:${IMAGE_TAG}
-                docker exec ${IMAGE_NAME}-${IMAGE_TAG} nosetests --with-xunit --with-coverage --cover-package=project test_users.py
+                docker run -d -ti --rm --name simple-python-flask:${BUILD_ID} simple-python-flask:${BUILD_ID}
+                docker exec simple-python-flask:${BUILD_ID} nosetests --with-xunit --with-coverage --cover-package=project test_users.py
             """
         }
 
@@ -52,7 +48,7 @@ volumes: [
             }
             cleanup {
                 container('docker') {
-                    sh "docker stop ${IMAGE_NAME}-${IMAGE_TAG}"
+                    sh "docker stop simple-python-flask:${BUILD_ID}"
                 }
             }
         }
