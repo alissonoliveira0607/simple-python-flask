@@ -1,39 +1,60 @@
-pipeline {
-    agent k3s  // Define o agent / nó em que a pipeline será executada
+podTemplate(containers: [
+    containerTemplate(
+        name: 'docker',
+        image: 'docker:dind',
+        command: 'sleep',
+        args: '99d',
+        ttyEnabled: true,
+        privileged: true
+    )
+],
+volumes: [
+    hostPathVolume(
+        hostPath: '/var/run/docker.sock',
+        mountPath: '/var/run/docker.sock'
+    )
+]) {
 
-    // Definição das variáveis que serão utilizadas na construção da imagem
-    environment {
-        IMAGE_TAG="O.${BUILD_ID}"
-        IMAGE_NAME="simple-python-flask"
-    }
+    pipeline {
+        agent {
+            label POD_LABEL
+        }
 
-    stages {
-        // Stage de build da imagem para a aplicação
-        stage("Build") {
-            steps{
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+        environment {
+            IMAGE_TAG = "O.${BUILD_ID}"
+            IMAGE_NAME = "simple-python-flask"
+        }
+
+        // Checkout do código
+        container('docker') {
+            git 'https://github.com/alissonoliveira0607/simple-python-flask.git'
+        }
+
+        // Build da imagem
+        container('docker') {
+            sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+        }
+
+        // Execução dos testes
+        container('docker') {
+            sh """
+                docker run -d -ti --rm --name ${IMAGE_NAME}-${IMAGE_TAG} ${IMAGE_NAME}:${IMAGE_TAG}
+                docker exec ${IMAGE_NAME}-${IMAGE_TAG} nosetests --with-xunit --with-coverage --cover-package=project test_users.py
+            """
+        }
+
+        post {
+            success {
+                echo "Pipeline executada com sucesso"
             }
-        }
-        
-        // Stage de testes para validar o build da imagem
-        stage("Teste") {
-            steps{
-                sh "docker run -d -ti --rm --name ${IMAGE_NAME}-${IMAGE_TAG} ${IMAGE_NAME}:${IMAGE_TAG}"  // Inicia um container com a imagem que foi buildada
-                sh "docker exec ${IMAGE_NAME}-${IMAGE_TAG} nosetests --with-xunit --with-coverage --cover-package=project test_users.py" // Executa um comando no container
-                //sh "docker rm -f ${IMAGE_NAME}-${IMAGE_TAG}"  // Remove o container
+            failure {
+                echo "Pipeline falhou"
             }
-        }
-    }
-
-    post {
-        success {
-            echo "Pipeline executada com sucesso"
-        }
-        failure {
-            echo "Pipeline Falhou"
-        }
-        cleanup {
-            sh "docker stop ${IMAGE_NAME}-${IMAGE_TAG}"
+            cleanup {
+                container('docker') {
+                    sh "docker stop ${IMAGE_NAME}-${IMAGE_TAG}"
+                }
+            }
         }
     }
 }
