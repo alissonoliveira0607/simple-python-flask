@@ -32,15 +32,5 @@ volumes: [ hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run
         }
     }
 }
-    post {
-        success {
-            echo "Pipeline executada com sucesso"
-        }
-        failure {
-            echo "Pipeline Falhou"
-        }
-        cleanup {
-            sh "docker stop simple-python-flask:${BUILD_ID}"
-        }
-    }
+
 }
