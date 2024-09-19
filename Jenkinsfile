@@ -14,10 +14,10 @@ volumes: [ hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run
     node(POD_LABEL)
     {
         container('docker'){
+            
+        stage("Clone do repositório"){
             git 'https://github.com/alissonoliveira0607/simple-python-flask.git'
         }
-    }
-
 
         // Stage de build da imagem para a aplicação
         stage("Build") {
@@ -30,8 +30,8 @@ volumes: [ hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run
                sh "docker run -d -ti --rm --name simple-python-flask:${BUILD_ID} simple-python-flask:${BUILD_ID}"  // Inicia um container com a imagem que foi buildada
                sh "docker exec simple-python-flask:${BUILD_ID} nosetests --with-xunit --with-coverage --cover-package=project test_users.py" // Executa um comando no container
         }
- 
-
+    }
+}
     post {
         success {
             echo "Pipeline executada com sucesso"
