@@ -8,53 +8,39 @@ podTemplate(containers: [
         privileged: true
     )
 ],
-volumes: [
-    hostPathVolume(
-        hostPath: '/var/run/docker.sock',
-        mountPath: '/var/run/docker.sock'
-    )
-]) {
+volumes: [ hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock') ]
+){
 
-    pipeline {
-        agent {
-            label POD_LABEL
-        }
-
-        environment {
-            IMAGE_TAG = "O.${BUILD_ID}"
-            IMAGE_NAME = "simple-python-flask"
-        }
-
-        // Checkout do código
-        container('docker') {
+    node(POD_LABEL)
+    {
+        container('docker'){
             git 'https://github.com/alissonoliveira0607/simple-python-flask.git'
         }
+    }
 
-        // Build da imagem
-        container('docker') {
-            sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+
+        // Stage de build da imagem para a aplicação
+        stage("Build") {
+                sh "docker build -t simple-python-flask:${BUILD_ID} ."
+            
         }
-
-        // Execução dos testes
-        container('docker') {
-            sh """
-                docker run -d -ti --rm --name ${IMAGE_NAME}-${IMAGE_TAG} ${IMAGE_NAME}:${IMAGE_TAG}
-                docker exec ${IMAGE_NAME}-${IMAGE_TAG} nosetests --with-xunit --with-coverage --cover-package=project test_users.py
-            """
+        
+        // Stage de testes para validar o build da imagem
+        stage("Teste") {
+               sh "docker run -d -ti --rm --name simple-python-flask:${BUILD_ID} simple-python-flask:${BUILD_ID}"  // Inicia um container com a imagem que foi buildada
+               sh "docker exec simple-python-flask:${BUILD_ID} nosetests --with-xunit --with-coverage --cover-package=project test_users.py" // Executa um comando no container
         }
+ 
 
-        post {
-            success {
-                echo "Pipeline executada com sucesso"
-            }
-            failure {
-                echo "Pipeline falhou"
-            }
-            cleanup {
-                container('docker') {
-                    sh "docker stop ${IMAGE_NAME}-${IMAGE_TAG}"
-                }
-            }
+    post {
+        success {
+            echo "Pipeline executada com sucesso"
+        }
+        failure {
+            echo "Pipeline Falhou"
+        }
+        cleanup {
+            sh "docker stop simple-python-flask:${BUILD_ID}"
         }
     }
 }
